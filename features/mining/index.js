@@ -136,6 +136,11 @@ class Mining extends Feature {
                 number = gems + number
             }
 
+            if (newGems == 0) {
+                id = "FLAWED_" + type.toUpperCase() + "_GEM"
+                number = parseInt(num)    
+            }
+
             gems = newGems
 
             lastMined = Date.now()
@@ -149,10 +154,19 @@ class Mining extends Feature {
                     startingTime = Date.now()
 
                     Object.keys(data.products).forEach(id => {
-                        if (id.startsWith("ROUGH_")) {
-                            gemstoneCosts[id] = Math.max(3, data.products[id].quick_status.sellPrice)
-                            if (this.gemstoneMoneyHudMoneyOnly.getValue()) {
-                                gemstoneCosts[id] = 3
+                        if (newGems == 0) {
+                            if (id.startsWith("FLAWED_")) {
+                                gemstoneCosts[id] = Math.max(240, data.products[id].quick_status.sellPrice)
+                                if (this.gemstoneMoneyHudMoneyOnly.getValue()) {
+                                    gemstoneCosts[id] = 240
+                                }
+                            }
+                        } else {
+                            if (id.startsWith("ROUGH_")) {
+                                gemstoneCosts[id] = Math.max(3, data.products[id].quick_status.sellPrice)
+                                if (this.gemstoneMoneyHudMoneyOnly.getValue()) {
+                                    gemstoneCosts[id] = 3
+                                }
                             }
                         }
                     })
