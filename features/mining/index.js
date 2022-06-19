@@ -129,7 +129,12 @@ class Mining extends Feature {
                     }
                 }
             })
+
             number = newGems - gems
+
+            if (gems > newGems) {
+                number = gems + number
+            }
 
             gems = newGems
 
@@ -166,6 +171,7 @@ class Mining extends Feature {
         this.registerStep(false, 10, () => {
             if (lastMined && Date.now() - lastMined > 2 * 60000) {
                 money = 0
+                gems = 0
                 startingTime = -1
                 lastMined = 0
                 this.gemstoneMoneyHudElement.setText("")
