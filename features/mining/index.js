@@ -110,10 +110,17 @@ class Mining extends Feature {
         let gemstoneCosts = {}
         let lastMined = 0
         let gems = 0
+        let prevType
         this.registerChat("&r&d&lPRISTINE! &r&fYou found &r${*} &r&aFlawed ${type} Gemstone &r&8x${num}&r&f!&r", (type, num, event) => {
             let id = "ROUGH_" + type.toUpperCase() + "_GEM"
             let number = 0
             let newGems = 0
+            
+            if (prevType != type) {
+                startingTime = -1
+            }
+            prevType = type
+
 
             Player.getInventory().getItems().forEach(i => {
 
@@ -184,6 +191,7 @@ class Mining extends Feature {
         })
         this.registerStep(false, 10, () => {
             if (lastMined && Date.now() - lastMined > 2 * 60000) {
+                prevType = null
                 money = 0
                 gems = 0
                 startingTime = -1
