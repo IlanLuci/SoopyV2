@@ -109,10 +109,29 @@ class Mining extends Feature {
         let money = 0
         let gemstoneCosts = {}
         let lastMined = 0
+        let gems = 0
         this.registerChat("&r&d&lPRISTINE! &r&fYou found &r${*} &r&aFlawed ${type} Gemstone &r&8x${num}&r&f!&r", (type, num, event) => {
+            let id = "ROUGH_" + type.toUpperCase() + "_GEM"
+            let number = 0
+            let newGems = 0
 
-            let id = "FLAWED_" + type.toUpperCase() + "_GEM"
-            let number = parseInt(num)
+            Player.getInventory().getItems().forEach(i => {
+
+                if (i && i.getName().includes("Gemstone")) {
+                    if (i.getName().includes("Rough")) {
+                        newGems += i.getStackSize()
+                    }
+                    if (i.getName().includes("Flawed")) {
+                        newGems += i.getStackSize() * 80
+                    }
+                    if (i.getName().includes("Fine")) {
+                        newGems += (i.getStackSize() * 80) * 80
+                    }
+                }
+            })
+            number = newGems - gems
+
+            gems = newGems
 
             lastMined = Date.now()
 
@@ -125,12 +144,11 @@ class Mining extends Feature {
                     startingTime = Date.now()
 
                     Object.keys(data.products).forEach(id => {
-                        if (id.startsWith("FLAWED_")) {
-                            gemstoneCosts[id] = Math.max(240, data.products[id].quick_status.sellPrice)
+                        if (id.startsWith("ROUGH_")) {
+                            gemstoneCosts[id] = Math.max(3, data.products[id].quick_status.sellPrice)
                             if (this.gemstoneMoneyHudMoneyOnly.getValue()) {
-                                gemstoneCosts[id] = 240
+                                gemstoneCosts[id] = 3
                             }
-                            // console.log(id + ": " + gemstoneCosts[id])
                         }
                     })
                 })
