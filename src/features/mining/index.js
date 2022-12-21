@@ -58,6 +58,16 @@ class Mining extends Feature {
         this.gemstoneMoneyHudMoneyOnly = new ToggleSetting("Force npc price", "(Eg if u are ironman)", false, "gemstone_money_hud_npc", this).requires(this.gemstoneMoneyHud)
         this.hudElements.push(this.gemstoneMoneyHudElement)
 
+        
+        this.mithrilMoneyHud = new ToggleSetting("Show $/h made from mithril mining", "This will add a HUD element with the mithril $/h", true, "mithril_money_hud", this)
+        this.mithrilMoneyHudElement = new HudTextElement()
+            .setToggleSetting(this.mithrilMoneyHud)
+            .setLocationSetting(new LocationSetting("HUD Location", "Allows you to edit the location of the mithril $/h", "mithril_money_location", this, [10, 60, 1, 1])
+                .requires(this.mithrilMoneyHud)
+                .editTempText("&6$/h&7> &f$12,345,678\n&6$ made&7> &f$123,456,789\n&6Time tracked&7> &f123m"))
+        this.mithrilMoneyHudMoneyOnly = new ToggleSetting("Force npc price", "(Eg if u are ironman)", true, "mithril_money_hud_npc", this).requires(this.mithrilMoneyHud)
+        this.hudElements.push(this.mithrilMoneyHudElement)
+
         this.nextChEvent = new ToggleSetting("Show the current and next crystal hollows event", "(syncs the data between all users in ch)", true, "chevent_hud", this)
         this.nextChEventElement = new HudTextElement()
             .setToggleSetting(this.nextChEvent)
@@ -80,6 +90,12 @@ class Mining extends Feature {
         this.totalCompact = 0
         this.compactProgress = 0
         this.compactItems = 0
+
+        this.prevMithril = 0
+        this.mithrilStartingTime = -1
+        this.mithrilCost = 0
+        this.mithrilMoney = 0
+        this.mithrilLastMined = 0
 
         this.armourstandClass = Java.type("net.minecraft.entity.item.EntityArmorStand").class
 
@@ -421,8 +437,47 @@ class Mining extends Feature {
             drawCoolWaypoint(loc[0], loc[1], loc[2], 0, 255, 0, { name: "TREASURE", phase: true })
         })
     }
-
+    
     tick() {
+        if (this.mithrilMoneyHud.getValue() && Date.now() - this.mithrilLastMined > 1000) {
+            let curMithil = 0
+
+            Player.getInventory().getItems().forEach(i => {
+                if (i && i.getName().endsWith("Mithril")) {
+                    if (i && i.getName().includes("Enchanted Mithril")) {
+                        curMithil += 80
+                    } else {
+                        curMithil += 1
+                    }
+                }
+            })
+
+            let gainedMithril = curMithil - this.prevMithril
+
+            this.prevMithril = curMithil
+
+            this.mithrilLastMined = Date.now()
+
+            if (this.mithrilStartingTime === 0) return
+            if (this.mithrilStartingTime === -1) {
+                this.mithrilStartingTime = 0
+                    
+                    this.mithrilStartingTime = Date.now()
+                    this.mithrilCost = 10
+
+                    return
+            }
+            
+            this.mithrilMoney += this.mithrilCost * gainedMithril
+    
+            let moneyPerHour = Math.floor(this.mithrilMoney / ((Date.now() - this.mithrilStartingTime) / (1000 * 60 * 60)))
+            let moneyMade = Math.floor(this.mithrilMoney)
+            let timeTracked = timeSince2(this.mithrilStartingTime)
+    
+            this.mithrilMoneyHudElement.setText("&6$/h&7> &f$" + numberWithCommas(moneyPerHour) + "\n&6$ made&7> &f$" + numberWithCommas(moneyMade) + "\n&6Time tracked&7> &f" + timeTracked)
+        }
+
+
         let oldCompactItems = this.compactItems
         let oldTotalCompact = this.totalCompact
         this.totalCompact = 0
