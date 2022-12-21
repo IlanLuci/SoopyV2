@@ -65,7 +65,6 @@ class Mining extends Feature {
             .setLocationSetting(new LocationSetting("HUD Location", "Allows you to edit the location of the mithril $/h", "mithril_money_location", this, [10, 60, 1, 1])
                 .requires(this.mithrilMoneyHud)
                 .editTempText("&6$/h&7> &f$12,345,678\n&6$ made&7> &f$123,456,789\n&6Time tracked&7> &f123m"))
-        this.mithrilMoneyHudMoneyOnly = new ToggleSetting("Force npc price", "(Eg if u are ironman)", true, "mithril_money_hud_npc", this).requires(this.mithrilMoneyHud)
         this.hudElements.push(this.mithrilMoneyHudElement)
 
         this.nextChEvent = new ToggleSetting("Show the current and next crystal hollows event", "(syncs the data between all users in ch)", true, "chevent_hud", this)
@@ -92,8 +91,10 @@ class Mining extends Feature {
         this.compactItems = 0
 
         this.prevMithril = 0
+        this.prevTitanium = 0
         this.mithrilStartingTime = -1
         this.mithrilCost = 0
+        this.titaniumCost = 0
         this.mithrilMoney = 0
         this.mithrilLastMined = 0
 
@@ -439,22 +440,34 @@ class Mining extends Feature {
     }
     
     tick() {
-        if (this.mithrilMoneyHud.getValue() && Date.now() - this.mithrilLastMined > 1000) {
+        if (this.mithrilMoneyHud.getValue() && Date.now() - this.mithrilLastMined > 2000) {
             let curMithil = 0
+            let curTitanium = 0
 
             Player.getInventory().getItems().forEach(i => {
                 if (i && i.getName().endsWith("Mithril")) {
                     if (i && i.getName().includes("Enchanted Mithril")) {
-                        curMithil += 80
+                        curMithil += 80 * i.getStackSize()
                     } else {
-                        curMithil += 1
+                        curMithil += 1 * i.getStackSize()
+                    }
+                } else if (i && i.getName().endsWith("Titanium")) {
+                    if (i && i.getName().includes("Enchanted Titanium")) {
+                        curTitanium += 160 * i.getStackSize()
+                    } else {
+                        curTitanium += 1 * i.getStackSize()
                     }
                 }
             })
 
-            let gainedMithril = curMithil - this.prevMithril
+            let gainedMithril
+            let gainedTitanium
+
+            if (curMithil >= this.prevMithril) gainedMithril = curMithil - this.prevMithril
+            if (curTitanium >= this.prevTitanium) gainedTitanium = curTitanium - this.prevTitanium
 
             this.prevMithril = curMithil
+            this.prevTitanium = curTitanium
 
             this.mithrilLastMined = Date.now()
 
@@ -463,12 +476,16 @@ class Mining extends Feature {
                 this.mithrilStartingTime = 0
                     
                     this.mithrilStartingTime = Date.now()
+                    // assumes mithril npc price
                     this.mithrilCost = 10
+                    // assumes 85 coin titanium bz price
+                    this.titaniumCost = 85
 
                     return
             }
             
-            this.mithrilMoney += this.mithrilCost * gainedMithril
+            this.mithrilMoney += this.mithrilCost * (gainedMithril || 0)
+            this.mithrilMoney += this.titaniumCost * (gainedTitanium || 0)
     
             let moneyPerHour = Math.floor(this.mithrilMoney / ((Date.now() - this.mithrilStartingTime) / (1000 * 60 * 60)))
             let moneyMade = Math.floor(this.mithrilMoney)
